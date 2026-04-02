@@ -1,0 +1,182 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ================= BODY ================= */
+body {
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: linear-gradient(180deg, #eef2f7, #e6ebf3);
+  color: #2c3e50;
+  min-height: 100vh;
+  line-height: 1.5;
+}
+
+/* ================= HEADER ================= */
+.header {
+  width: 100%;
+  background: linear-gradient(135deg, #1f2d3a, #111a22);
+  color: white;
+  padding: 20px;
+  font-size: 24px;
+  font-weight: 700;
+  text-align: center;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+  letter-spacing: 0.5px;
+}
+
+/* ================= CONTAINER ================= */
+.container {
+  padding: 25px;
+}
+
+/* ================= GRID ================= */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 24px;
+}
+
+/* ================= CARD ================= */
+.card {
+  background: linear-gradient(180deg, #ffffff, #f9fafc);
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  transition: all 0.25s ease;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+}
+
+/* ================= TITLES ================= */
+h2 {
+  margin-bottom: 18px;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1f2d3a;
+}
+
+/* ================= FORM ================= */
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ================= INPUT ================= */
+input {
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid #d6dbe6;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  background: #f9fafc;
+}
+
+input:focus {
+  border-color: #3498db;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15);
+  background: #fff;
+}
+
+/* ================= BUTTON ================= */
+button {
+  margin-top: 8px;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #3498db, #1f78c1);
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+button:hover {
+  transform: scale(1.03);
+  filter: brightness(1.1);
+}
+
+/* ================= LIST ================= */
+ul {
+  margin-top: 14px;
+  list-style: none;
+}
+
+/* ================= ITEM ================= */
+li {
+  background: #f8fafc;
+  padding: 14px;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  transition: all 0.2s ease;
+}
+
+li:hover {
+  background: #eef4fb;
+  transform: translateX(2px);
+}
+
+/* Diferenciar visitantes e entregas */
+li.visitante {
+  border-left: 5px solid #3498db;
+}
+li.entrega {
+  border-left: 5px solid #27ae60;
+}
+
+/* ================= IMAGEM ================= */
+img {
+  border-radius: 12px;
+  margin-top: 10px;
+  max-width: 100%;
+  height: auto;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.1);
+}
+
+/* ================= ACTIONS ================= */
+.actions {
+  margin-top: 12px;
+  display: flex;
+  gap: 10px;
+}
+
+/* ================= BOTÕES ESPECÍFICOS ================= */
+.btn-edit {
+  background: linear-gradient(135deg, #f39c12, #d68910);
+}
+
+.btn-delete {
+  background: linear-gradient(135deg, #e74c3c, #c0392b);
+}
+
+.btn-edit:hover,
+.btn-delete:hover {
+  transform: scale(1.06);
+  filter: brightness(1.1);
+}
+
+/* ================= RESPONSIVO ================= */
+@media (max-width: 768px) {
+  .container {
+    padding: 15px;
+  }
+
+  .header {
+    font-size: 20px;
+    padding: 14px;
+  }
+
+  .card {
+    padding: 18px;
+  }
+}
