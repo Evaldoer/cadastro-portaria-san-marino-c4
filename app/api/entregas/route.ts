@@ -6,13 +6,24 @@ export async function GET() {
   const { data, error } = await supabaseServer
     .from("entregas")
     .select("*")
-    .order("id", { ascending: false });
+    .order("data_hora", { ascending: false });
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("❌ ERRO GET:", error);
+    return NextResponse.json([], { status: 500 });
   }
 
-  return NextResponse.json(data);
+  return NextResponse.json(
+    data.map((e) => ({
+      id: e.id,
+      descricao: e.descricao,
+      quantidade: e.quantidade,
+      bloco: e.bloco,
+      apartamento: e.apartamento,
+      foto: e.foto_url,
+      data: e.data_hora,
+    }))
+  );
 }
 
 // ================= POST =================
@@ -20,39 +31,42 @@ export async function POST(req: Request) {
   try {
     const formData = await req.formData();
 
-    const descricao = String(formData.get("descricao") || "");
-    const quantidade = String(formData.get("quantidade") || "");
-    const bloco = String(formData.get("bloco") || "");
-    const apartamento = String(formData.get("apartamento") || "");
-    const file = formData.get("foto") as File | null;
+    const descricao = formData.get("descricao") as string;
+    const quantidade = formData.get("quantidade") as string;
+    const bloco = formData.get("bloco") as string;
+    const apartamento = formData.get("apartamento") as string;
+    const file = formData.get("foto") as File;
 
     let fotoUrl = "";
 
-    // 📸 Upload para Supabase Storage
+    // ================= UPLOAD =================
     if (file && file.size > 0) {
-      const fileName = `${Date.now()}-${file.name}`;
+      const fileName = `${Date.now()}-${file.name.replace(/\s/g, "_")}`;
 
       const { error: uploadError } = await supabaseServer.storage
-        .from("entregas") // nome do bucket
-        .upload(fileName, file);
+        .from("entregas")
+        .upload(fileName, file, {
+          contentType: file.type || "image/jpeg",
+        });
 
       if (uploadError) {
-        console.error(uploadError);
-        return NextResponse.json(
-          { error: "Erro no upload da imagem" },
-          { status: 500 }
-        );
+        console.error("❌ ERRO UPLOAD:", uploadError);
+      } else {
+        const { data } = supabaseServer.storage
+          .from("entregas")
+          .getPublicUrl(fileName);
+
+        fotoUrl = data.publicUrl;
       }
-
-      const { data } = supabaseServer.storage
-        .from("entregas")
-        .getPublicUrl(fileName);
-
-      fotoUrl = data.publicUrl;
     }
 
-    // 💾 Salvar no banco
-    const { data, error } = await supabaseServer
+    // 🔥 HORÁRIO CORRETO (BRASIL)
+    const dataBrasil = new Date().toLocaleString("sv-SE", {
+      timeZone: "America/Sao_Paulo",
+    });
+
+    // ================= SALVAR =================
+    const { data: novaEntrega, error } = await supabaseServer
       .from("entregas")
       .insert([
         {
@@ -60,78 +74,47 @@ export async function POST(req: Request) {
           quantidade,
           bloco,
           apartamento,
-          foto: fotoUrl,
+          foto_url: fotoUrl,
+          data_hora: dataBrasil,
         },
       ])
-      .select();
+      .select()
+      .single();
 
     if (error) {
-      console.error(error);
-      return NextResponse.json(
-        { error: "Erro ao salvar entrega" },
-        { status: 500 }
-      );
+      console.error("❌ ERRO INSERT:", error);
+      return NextResponse.json({ error }, { status: 500 });
     }
 
-    return NextResponse.json(data[0]);
+    return NextResponse.json({
+      id: novaEntrega.id,
+      descricao: novaEntrega.descricao,
+      quantidade: novaEntrega.quantidade,
+      bloco: novaEntrega.bloco,
+      apartamento: novaEntrega.apartamento,
+      foto: novaEntrega.foto_url,
+      data: novaEntrega.data_hora,
+    });
   } catch (err) {
-    console.error(err);
-    return NextResponse.json(
-      { error: "Erro ao salvar entrega" },
-      { status: 500 }
-    );
+    console.error("❌ ERRO GERAL:", err);
+    return NextResponse.json({ error: "Erro geral" }, { status: 500 });
   }
 }
 
 // ================= DELETE =================
 export async function DELETE(req: Request) {
-  try {
-    const body = await req.json();
+  const { id } = await req.json();
 
-    if (!body?.id) {
-      return NextResponse.json({ error: "ID inválido" }, { status: 400 });
-    }
+  await supabaseServer.from("entregas").delete().eq("id", id);
 
-    const { error } = await supabaseServer
-      .from("entregas")
-      .delete()
-      .eq("id", body.id);
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ success: true });
-  } catch (err) {
-    return NextResponse.json({ error: "Erro ao excluir" }, { status: 500 });
-  }
+  return NextResponse.json({ success: true });
 }
 
 // ================= PUT =================
 export async function PUT(req: Request) {
-  try {
-    const body = await req.json();
+  const body = await req.json();
 
-    if (!body?.id) {
-      return NextResponse.json({ error: "ID inválido" }, { status: 400 });
-    }
+  await supabaseServer.from("entregas").update(body).eq("id", body.id);
 
-    const { error } = await supabaseServer
-      .from("entregas")
-      .update({
-        descricao: body.descricao,
-        quantidade: body.quantidade,
-        bloco: body.bloco,
-        apartamento: body.apartamento,
-      })
-      .eq("id", body.id);
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ success: true });
-  } catch (err) {
-    return NextResponse.json({ error: "Erro ao atualizar" }, { status: 500 });
-  }
+  return NextResponse.json({ success: true });
 }

@@ -27,7 +27,7 @@ export default function Home() {
   const [visitantes, setVisitantes] = useState<Visitante[]>([]);
   const [entregas, setEntregas] = useState<Entrega[]>([]);
 
-  // ================= FORMATAR DATA =================
+  // ================= DATA =================
   function formatarData(data?: string) {
     if (!data) return "";
     return new Date(data).toLocaleString("pt-BR", {
@@ -49,6 +49,7 @@ export default function Home() {
 
   async function registrarVisitante(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+
     const form = e.currentTarget;
 
     const nome = (form.elements.namedItem("nome") as HTMLInputElement).value;
@@ -62,7 +63,7 @@ export default function Home() {
     });
 
     form.reset();
-    await carregarVisitantes();
+    carregarVisitantes();
   }
 
   async function excluirVisitante(id: number) {
@@ -71,18 +72,20 @@ export default function Home() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
     });
-    await carregarVisitantes();
+    carregarVisitantes();
   }
 
   async function editarVisitante(v: Visitante) {
     const nome = prompt("Novo nome:", v.nome);
     if (!nome) return;
+
     await fetch("/api/visitantes", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...v, nome }),
     });
-    await carregarVisitantes();
+
+    carregarVisitantes();
   }
 
   // ================= ENTREGAS =================
@@ -94,28 +97,28 @@ export default function Home() {
 
   async function registrarEntrega(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+
     const form = e.currentTarget;
+    const formData = new FormData(form);
 
-    const descricao = (form.elements.namedItem("descricao") as HTMLInputElement).value;
-    const quantidade = (form.elements.namedItem("quantidade") as HTMLInputElement).value;
-    const bloco = (form.elements.namedItem("bloco") as HTMLInputElement).value;
-    const apartamento = (form.elements.namedItem("apartamento") as HTMLInputElement).value;
-    const foto = (form.elements.namedItem("foto") as HTMLInputElement).files?.[0];
+    const foto = formData.get("foto") as File;
 
-    const formData = new FormData();
-    formData.append("descricao", descricao);
-    formData.append("quantidade", quantidade);
-    formData.append("bloco", bloco);
-    formData.append("apartamento", apartamento);
-    if (foto) formData.append("foto", foto);
+    if (foto && foto.size === 0) {
+      formData.delete("foto");
+    }
 
-    await fetch("/api/entregas", {
+    const res = await fetch("/api/entregas", {
       method: "POST",
       body: formData,
     });
 
+    const novaEntrega = await res.json();
+
+    if (novaEntrega && novaEntrega.id) {
+      setEntregas((prev) => [novaEntrega, ...prev]);
+    }
+
     form.reset();
-    await carregarEntregas();
   }
 
   async function excluirEntrega(id: number) {
@@ -124,25 +127,29 @@ export default function Home() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
     });
-    await carregarEntregas();
+    carregarEntregas();
   }
 
   async function editarEntrega(e: Entrega) {
     const descricao = prompt("Nova descrição:", e.descricao);
     if (!descricao) return;
+
     await fetch("/api/entregas", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...e, descricao }),
     });
-    await carregarEntregas();
+
+    carregarEntregas();
   }
 
   // ================= INIT =================
   useEffect(() => {
-    const init = async () => {
-      await Promise.all([carregarVisitantes(), carregarEntregas()]);
-    };
+    async function init() {
+      await carregarVisitantes();
+      await carregarEntregas();
+    }
+
     init();
   }, []);
 
@@ -171,48 +178,67 @@ export default function Home() {
             <input name="quantidade" placeholder="Quantidade" required />
             <input name="bloco" placeholder="Bloco" required />
             <input name="apartamento" placeholder="Apartamento" required />
-            <input name="foto" type="file" />
+
+            <input
+              name="foto"
+              type="file"
+              accept="image/*"
+              onChange={(e) =>
+                console.log("📸 Arquivo escolhido:", e.target.files?.[0])
+              }
+            />
+
             <button type="submit">Registrar</button>
           </form>
         </div>
 
-        {/* LISTA VISITANTES */}
+        {/* VISITANTES */}
         <div className="card">
           <h2>📋 Visitantes</h2>
           <ul>
             {visitantes.map((v) => (
-              <li key={v.id} className="visitante">
+              <li key={v.id}>
                 👤 {v.nome} - RG: {v.rg}
                 <br />
                 🏠 Ap {v.apartamento}
                 <br />
                 🕒 {formatarData(v.data)}
                 <div className="actions">
-                  <button className="btn-edit" onClick={() => editarVisitante(v)}>✏️ Editar</button>
-                  <button className="btn-delete" onClick={() => excluirVisitante(v.id)}>❌ Excluir</button>
+                  <button className="btn-edit" onClick={() => editarVisitante(v)}>✏️</button>
+                  <button className="btn-delete" onClick={() => excluirVisitante(v.id)}>❌</button>
                 </div>
               </li>
             ))}
           </ul>
         </div>
 
-        {/* LISTA ENTREGAS */}
+        {/* ENTREGAS */}
         <div className="card">
           <h2>📦 Entregas</h2>
           <ul>
             {entregas.map((e) => (
-              <li key={e.id} className="entrega">
+              <li key={e.id}>
                 📦 {e.descricao} - {e.quantidade}
                 <br />
                 🏢 Bloco {e.bloco} Ap {e.apartamento}
                 <br />
                 🕒 {formatarData(e.data)}
-                {e.foto && (
-                  <Image src={e.foto} width={120} height={120} alt="foto" />
+
+                {e.foto ? (
+                  <Image
+                    src={e.foto}
+                    alt="Foto da entrega"
+                    width={120}
+                    height={120}
+                    style={{ marginTop: 8, border: "1px solid #ccc" }}
+                  />
+                ) : (
+                  <p style={{ color: "#999" }}>Sem imagem</p>
                 )}
+
                 <div className="actions">
-                  <button className="btn-edit" onClick={() => editarEntrega(e)}>✏️ Editar</button>
-                  <button className="btn-delete" onClick={() => excluirEntrega(e.id)}>❌ Excluir</button>
+                  <button className="btn-edit" onClick={() => editarEntrega(e)}>✏️</button>
+                  <button className="btn-delete" onClick={() => excluirEntrega(e.id)}>❌</button>
                 </div>
               </li>
             ))}
