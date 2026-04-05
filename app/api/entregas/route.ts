@@ -7,7 +7,6 @@ export async function GET() {
     .from("entregas")
     .select("*")
     .order("data_hora", { ascending: false });
-
   if (error) {
     console.error("❌ ERRO GET:", error);
     return NextResponse.json([], { status: 500 });
