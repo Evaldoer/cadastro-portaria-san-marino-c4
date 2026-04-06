@@ -36,6 +36,29 @@ function getBarcodeDetector() {
   return detectorHost.BarcodeDetector;
 }
 
+function stopMediaStream(stream: MediaStream | null) {
+  stream?.getTracks().forEach((track) => track.stop());
+}
+
+async function createDetector() {
+  const Detector = getBarcodeDetector();
+
+  if (!Detector) {
+    return null;
+  }
+
+  const supportedFormats = Detector.getSupportedFormats
+    ? await Detector.getSupportedFormats()
+    : [];
+
+  const formats =
+    supportedFormats.length > 0
+      ? barcodeFormats.filter((format) => supportedFormats.includes(format))
+      : [...barcodeFormats];
+
+  return new Detector({ formats });
+}
+
 export default function RegistrarEntregaPage() {
   const [descricao, setDescricao] = useState("");
   const [quantidade, setQuantidade] = useState("");
@@ -46,9 +69,9 @@ export default function RegistrarEntregaPage() {
   const [formatoLido, setFormatoLido] = useState("");
   const [scannerAtivo, setScannerAtivo] = useState(false);
   const [scannerDisponivel, setScannerDisponivel] = useState(false);
+  const [cameraDisponivel, setCameraDisponivel] = useState(false);
   const [mensagem, setMensagem] = useState("");
   const [salvando, setSalvando] = useState(false);
-  const [cameraDisponivel, setCameraDisponivel] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -57,9 +80,11 @@ export default function RegistrarEntregaPage() {
   const detectorRef = useRef<BarcodeDetectorApi | null>(null);
 
   useEffect(() => {
-    const Detector = getBarcodeDetector();
-    setScannerDisponivel(Boolean(Detector));
-    setCameraDisponivel(Boolean(navigator.mediaDevices?.getUserMedia));
+    const hasWindow = typeof window !== "undefined";
+    const hasCameraApi = typeof navigator !== "undefined" && Boolean(navigator.mediaDevices?.getUserMedia);
+
+    setScannerDisponivel(hasWindow && Boolean(getBarcodeDetector()));
+    setCameraDisponivel(hasCameraApi);
   }, []);
 
   useEffect(() => {
@@ -69,31 +94,28 @@ export default function RegistrarEntregaPage() {
 
     let cancelled = false;
     const videoElement = videoRef.current;
+    const canvasElement = canvasRef.current;
 
     async function iniciarScanner() {
-      const Detector = getBarcodeDetector();
-
-      if (!videoElement) {
+      if (!videoElement || !canvasElement) {
         setMensagem("Camera indisponivel nesta pagina.");
         setScannerAtivo(false);
         return;
       }
 
+      if (!navigator.mediaDevices?.getUserMedia) {
+        setMensagem("Seu navegador nao permite acesso a camera.");
+        setScannerAtivo(false);
+        return;
+      }
+
       try {
-        if (Detector) {
-          const supportedFormats = Detector.getSupportedFormats
-            ? await Detector.getSupportedFormats()
-            : [];
+        detectorRef.current = await createDetector();
 
-          const formats =
-            supportedFormats.length > 0
-              ? barcodeFormats.filter((format) => supportedFormats.includes(format))
-              : [...barcodeFormats];
-
-          detectorRef.current = new Detector({ formats });
-        } else {
-          detectorRef.current = null;
+        if (!detectorRef.current) {
           setMensagem("Camera aberta. A leitura automatica nao esta disponivel neste navegador.");
+        } else {
+          setMensagem("");
         }
 
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -102,7 +124,7 @@ export default function RegistrarEntregaPage() {
         });
 
         if (cancelled) {
-          stream.getTracks().forEach((track) => track.stop());
+          stopMediaStream(stream);
           return;
         }
 
@@ -111,9 +133,7 @@ export default function RegistrarEntregaPage() {
         await videoElement.play();
 
         const scan = async () => {
-          const canvasElement = canvasRef.current;
-
-          if (cancelled || !canvasElement) {
+          if (cancelled) {
             return;
           }
 
@@ -169,12 +189,13 @@ export default function RegistrarEntregaPage() {
         frameRef.current = null;
       }
 
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop());
-        streamRef.current = null;
-      }
+      stopMediaStream(streamRef.current);
+      streamRef.current = null;
+      detectorRef.current = null;
 
-      videoElement.srcObject = null;
+      if (videoElement) {
+        videoElement.srcObject = null;
+      }
     };
   }, [scannerAtivo]);
 
@@ -291,7 +312,9 @@ export default function RegistrarEntregaPage() {
             onChange={(e) => setCodigoLido(e.target.value)}
             placeholder="Nenhum codigo capturado ainda"
           />
-          <small>{formatoLido ? `Formato detectado: ${formatoLido}` : "QR code, Code 128, EAN e outros suportados."}</small>
+          <small>
+            {formatoLido ? `Formato detectado: ${formatoLido}` : "QR code, Code 128, EAN e outros suportados."}
+          </small>
         </div>
       </div>
 
