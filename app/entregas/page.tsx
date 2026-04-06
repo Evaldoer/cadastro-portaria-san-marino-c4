@@ -1,5 +1,6 @@
 "use client";
 
+import { formatLocalDateTime } from "@/lib/dateTime";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 
@@ -10,6 +11,7 @@ type Entrega = {
   bloco: string;
   apartamento: string;
   foto?: string;
+  data?: string;
 };
 
 export default function EntregasPage() {
@@ -50,6 +52,7 @@ export default function EntregasPage() {
                 <div className="delivery-meta">
                   Bloco {entrega.bloco} Ap {entrega.apartamento}
                 </div>
+                <div className="delivery-meta">Registrado em: {formatLocalDateTime(entrega.data)}</div>
               </div>
             </li>
           ))}

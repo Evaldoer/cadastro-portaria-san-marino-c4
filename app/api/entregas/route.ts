@@ -1,31 +1,31 @@
 import { NextResponse } from "next/server";
+import { getLocalDateTimeForDatabase } from "@/lib/dateTime";
 import { supabaseServer } from "@/lib/supabaseServer";
 
-// ================= GET =================
 export async function GET() {
   const { data, error } = await supabaseServer
     .from("entregas")
     .select("*")
     .order("data_hora", { ascending: false });
+
   if (error) {
-    console.error("❌ ERRO GET:", error);
+    console.error("Erro GET entregas:", error);
     return NextResponse.json([], { status: 500 });
   }
 
   return NextResponse.json(
-    data.map((e) => ({
-      id: e.id,
-      descricao: e.descricao,
-      quantidade: e.quantidade,
-      bloco: e.bloco,
-      apartamento: e.apartamento,
-      foto: e.foto_url,
-      data: e.data_hora,
+    data.map((entrega) => ({
+      id: entrega.id,
+      descricao: entrega.descricao,
+      quantidade: entrega.quantidade,
+      bloco: entrega.bloco,
+      apartamento: entrega.apartamento,
+      foto: entrega.foto_url,
+      data: entrega.data_hora,
     }))
   );
 }
 
-// ================= POST =================
 export async function POST(req: Request) {
   try {
     const formData = await req.formData();
@@ -38,7 +38,6 @@ export async function POST(req: Request) {
 
     let fotoUrl = "";
 
-    // ================= UPLOAD =================
     if (file && file.size > 0) {
       const fileName = `${Date.now()}-${file.name.replace(/\s/g, "_")}`;
 
@@ -49,22 +48,13 @@ export async function POST(req: Request) {
         });
 
       if (uploadError) {
-        console.error("❌ ERRO UPLOAD:", uploadError);
+        console.error("Erro upload entrega:", uploadError);
       } else {
-        const { data } = supabaseServer.storage
-          .from("entregas")
-          .getPublicUrl(fileName);
-
+        const { data } = supabaseServer.storage.from("entregas").getPublicUrl(fileName);
         fotoUrl = data.publicUrl;
       }
     }
 
-    // 🔥 HORÁRIO CORRETO (BRASIL)
-    const dataBrasil = new Date().toLocaleString("sv-SE", {
-      timeZone: "America/Sao_Paulo",
-    });
-
-    // ================= SALVAR =================
     const { data: novaEntrega, error } = await supabaseServer
       .from("entregas")
       .insert([
@@ -74,14 +64,14 @@ export async function POST(req: Request) {
           bloco,
           apartamento,
           foto_url: fotoUrl,
-          data_hora: dataBrasil,
+          data_hora: getLocalDateTimeForDatabase(),
         },
       ])
       .select()
       .single();
 
     if (error) {
-      console.error("❌ ERRO INSERT:", error);
+      console.error("Erro insert entrega:", error);
       return NextResponse.json({ error }, { status: 500 });
     }
 
@@ -94,13 +84,12 @@ export async function POST(req: Request) {
       foto: novaEntrega.foto_url,
       data: novaEntrega.data_hora,
     });
-  } catch (err) {
-    console.error("❌ ERRO GERAL:", err);
+  } catch (error) {
+    console.error("Erro geral entrega:", error);
     return NextResponse.json({ error: "Erro geral" }, { status: 500 });
   }
 }
 
-// ================= DELETE =================
 export async function DELETE(req: Request) {
   const { id } = await req.json();
 
@@ -109,7 +98,6 @@ export async function DELETE(req: Request) {
   return NextResponse.json({ success: true });
 }
 
-// ================= PUT =================
 export async function PUT(req: Request) {
   const body = await req.json();
 

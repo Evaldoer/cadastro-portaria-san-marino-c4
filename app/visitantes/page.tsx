@@ -1,5 +1,6 @@
 "use client";
 
+import { formatLocalDateTime } from "@/lib/dateTime";
 import { useEffect, useMemo, useState } from "react";
 
 type Visitante = {
@@ -8,6 +9,7 @@ type Visitante = {
   rg?: string;
   cpf?: string;
   apartamento: string;
+  data?: string;
 };
 
 function normalizarDocumento(valor: string) {
@@ -92,6 +94,7 @@ export default function VisitantesPage() {
               <div className="visitor-meta">RG: {visitante.rg || "Nao informado"}</div>
               <div className="visitor-meta">CPF: {visitante.cpf || "Nao informado"}</div>
               <div className="visitor-meta">Apartamento: {visitante.apartamento}</div>
+              <div className="visitor-meta">Registrado em: {formatLocalDateTime(visitante.data)}</div>
             </li>
           ))}
         </ul>
