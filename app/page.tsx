@@ -21,6 +21,11 @@ const atalhos = [
     titulo: "Consultar entregas",
     descricao: "Acompanhe o historico de encomendas registradas.",
   },
+  {
+    href: "/encomendas",
+    titulo: "Area de encomendas",
+    descricao: "Acesse o painel dedicado para entregas destinadas aos moradores.",
+  },
 ];
 
 export default function HomePage() {

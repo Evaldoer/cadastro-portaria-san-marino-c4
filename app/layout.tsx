@@ -27,11 +27,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Link href="/entregas" className="nav-link">
                 Entregas
               </Link>
+              <Link href="/encomendas" className="nav-link">
+                Encomendas
+              </Link>
               <Link href="/registrar-visitante" className="nav-link nav-link-accent">
                 Registrar visitante
               </Link>
               <Link href="/registrar-entrega" className="nav-link nav-link-accent">
                 Registrar entrega
+              </Link>
+              <Link href="/registrar-encomenda" className="nav-link nav-link-accent">
+                Registrar encomenda
               </Link>
             </nav>
           </div>

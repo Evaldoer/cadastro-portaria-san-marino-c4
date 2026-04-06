@@ -1,8 +1,17 @@
 import { NextResponse } from "next/server";
 import { getLocalDateTimeForDatabase } from "@/lib/dateTime";
+import {
+  encodeDeliveryDescription,
+  getDeliveryCategoryFromDescription,
+  normalizeDeliveryCategory,
+  stripDeliveryPrefix,
+} from "@/lib/deliveryCategory";
 import { supabaseServer } from "@/lib/supabaseServer";
 
-export async function GET() {
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const categoria = searchParams.get("categoria");
+
   const { data, error } = await supabaseServer
     .from("entregas")
     .select("*")
@@ -13,17 +22,24 @@ export async function GET() {
     return NextResponse.json([], { status: 500 });
   }
 
-  return NextResponse.json(
-    data.map((entrega) => ({
-      id: entrega.id,
-      descricao: entrega.descricao,
-      quantidade: entrega.quantidade,
-      bloco: entrega.bloco,
-      apartamento: entrega.apartamento,
-      foto: entrega.foto_url,
-      data: entrega.data_hora,
-    }))
-  );
+  const entregas = data
+    .map((entrega) => {
+      const deliveryCategory = getDeliveryCategoryFromDescription(entrega.descricao);
+
+      return {
+        id: entrega.id,
+        descricao: stripDeliveryPrefix(entrega.descricao),
+        quantidade: entrega.quantidade,
+        bloco: entrega.bloco,
+        apartamento: entrega.apartamento,
+        foto: entrega.foto_url,
+        data: entrega.data_hora,
+        categoria: deliveryCategory,
+      };
+    })
+    .filter((entrega) => !categoria || entrega.categoria === categoria);
+
+  return NextResponse.json(entregas);
 }
 
 export async function POST(req: Request) {
@@ -34,6 +50,7 @@ export async function POST(req: Request) {
     const quantidade = formData.get("quantidade") as string;
     const bloco = formData.get("bloco") as string;
     const apartamento = formData.get("apartamento") as string;
+    const categoria = normalizeDeliveryCategory(formData.get("categoria"));
     const file = formData.get("foto") as File;
 
     let fotoUrl = "";
@@ -59,7 +76,7 @@ export async function POST(req: Request) {
       .from("entregas")
       .insert([
         {
-          descricao,
+          descricao: encodeDeliveryDescription(descricao, categoria),
           quantidade,
           bloco,
           apartamento,
@@ -77,12 +94,13 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       id: novaEntrega.id,
-      descricao: novaEntrega.descricao,
+      descricao: stripDeliveryPrefix(novaEntrega.descricao),
       quantidade: novaEntrega.quantidade,
       bloco: novaEntrega.bloco,
       apartamento: novaEntrega.apartamento,
       foto: novaEntrega.foto_url,
       data: novaEntrega.data_hora,
+      categoria: getDeliveryCategoryFromDescription(novaEntrega.descricao),
     });
   } catch (error) {
     console.error("Erro geral entrega:", error);
