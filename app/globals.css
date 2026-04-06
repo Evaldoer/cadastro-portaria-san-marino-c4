@@ -411,6 +411,22 @@ img {
   margin-bottom: 20px;
 }
 
+.delivery-header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.delivery-header p {
+  color: #5c7186;
+}
+
+.delivery-search {
+  width: min(360px, 100%);
+}
+
 .delivery-list {
   display: grid;
   gap: 16px;
@@ -672,6 +688,11 @@ img {
 
   .delivery-card {
     grid-template-columns: 1fr;
+  }
+
+  .delivery-header {
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .delivery-media,

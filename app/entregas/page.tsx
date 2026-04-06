@@ -2,7 +2,7 @@
 
 import { formatLocalDateTime } from "@/lib/dateTime";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type Entrega = {
   id: number;
@@ -16,6 +16,7 @@ type Entrega = {
 
 export default function EntregasPage() {
   const [entregas, setEntregas] = useState<Entrega[]>([]);
+  const [busca, setBusca] = useState("");
 
   useEffect(() => {
     fetch("/api/entregas")
@@ -23,14 +24,44 @@ export default function EntregasPage() {
       .then(setEntregas);
   }, []);
 
+  const entregasFiltradas = useMemo(() => {
+    const termo = busca.trim().toLowerCase();
+
+    if (!termo) {
+      return entregas;
+    }
+
+    return entregas.filter((entrega) => {
+      return (
+        entrega.descricao.toLowerCase().includes(termo) ||
+        entrega.bloco.toLowerCase().includes(termo) ||
+        entrega.apartamento.toLowerCase().includes(termo)
+      );
+    });
+  }, [busca, entregas]);
+
   return (
     <div className="delivery-page">
-      <h2>Lista de Entregas</h2>
+      <div className="delivery-header">
+        <div>
+          <h2>Lista de Entregas</h2>
+          <p>Pesquise por descricao, bloco ou apartamento.</p>
+        </div>
+        <input
+          className="delivery-search"
+          placeholder="Buscar por bloco ou apartamento"
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+        />
+      </div>
+
       {entregas.length === 0 ? (
         <p>Nenhuma entrega cadastrada.</p>
+      ) : entregasFiltradas.length === 0 ? (
+        <p>Nenhuma entrega encontrada para a busca informada.</p>
       ) : (
         <ul className="delivery-list">
-          {entregas.map((entrega) => (
+          {entregasFiltradas.map((entrega) => (
             <li key={entrega.id} className="entrega delivery-card">
               <div className="delivery-media">
                 {entrega.foto ? (
