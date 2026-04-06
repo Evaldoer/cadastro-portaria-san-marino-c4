@@ -18,6 +18,26 @@ export default function EntregasPage() {
   const [entregas, setEntregas] = useState<Entrega[]>([]);
   const [busca, setBusca] = useState("");
 
+  async function deletarEntrega(id: number) {
+    const confirmado = window.confirm("Deseja excluir esta entrega?");
+
+    if (!confirmado) {
+      return;
+    }
+
+    const response = await fetch("/api/entregas", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+
+    if (!response.ok) {
+      return;
+    }
+
+    setEntregas((listaAtual) => listaAtual.filter((entrega) => entrega.id !== id));
+  }
+
   useEffect(() => {
     fetch("/api/entregas")
       .then((res) => res.json())
@@ -84,6 +104,15 @@ export default function EntregasPage() {
                   Bloco {entrega.bloco} Ap {entrega.apartamento}
                 </div>
                 <div className="delivery-meta">Registrado em: {formatLocalDateTime(entrega.data)}</div>
+                <div className="actions">
+                  <button
+                    type="button"
+                    className="btn-delete"
+                    onClick={() => deletarEntrega(entrega.id)}
+                  >
+                    Deletar
+                  </button>
+                </div>
               </div>
             </li>
           ))}

@@ -530,6 +530,16 @@ img {
   color: #4f657a;
 }
 
+.delivery-card .actions,
+.visitor-card .actions {
+  margin-top: 8px;
+}
+
+.delivery-card .btn-delete,
+.visitor-card .btn-delete {
+  min-width: 120px;
+}
+
 .form-page {
   display: grid;
   gap: 20px;

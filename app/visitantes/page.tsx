@@ -21,6 +21,30 @@ export default function VisitantesPage() {
   const [busca, setBusca] = useState("");
   const [erro, setErro] = useState("");
 
+  async function deletarVisitante(id: number) {
+    const confirmado = window.confirm("Deseja excluir este visitante?");
+
+    if (!confirmado) {
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/visitantes", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Falha ao excluir visitante.");
+      }
+
+      setVisitantes((listaAtual) => listaAtual.filter((visitante) => visitante.id !== id));
+    } catch {
+      setErro("Nao foi possivel excluir o visitante.");
+    }
+  }
+
   useEffect(() => {
     async function carregarVisitantes() {
       try {
@@ -95,6 +119,15 @@ export default function VisitantesPage() {
               <div className="visitor-meta">CPF: {visitante.cpf || "Nao informado"}</div>
               <div className="visitor-meta">Apartamento: {visitante.apartamento}</div>
               <div className="visitor-meta">Registrado em: {formatLocalDateTime(visitante.data)}</div>
+              <div className="actions">
+                <button
+                  type="button"
+                  className="btn-delete"
+                  onClick={() => deletarVisitante(visitante.id)}
+                >
+                  Deletar
+                </button>
+              </div>
             </li>
           ))}
         </ul>
