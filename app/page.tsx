@@ -1,250 +1,94 @@
-"use client";
+import Link from "next/link";
 
-import { useEffect, useState } from "react";
-import Image from "next/image";
+const atalhos = [
+  {
+    href: "/registrar-visitante",
+    titulo: "Registrar visitante",
+    descricao: "Cadastre entradas com rapidez para liberar o acesso.",
+  },
+  {
+    href: "/visitantes",
+    titulo: "Consultar visitantes",
+    descricao: "Veja a lista recente de cadastros da portaria.",
+  },
+  {
+    href: "/registrar-entrega",
+    titulo: "Registrar entrega",
+    descricao: "Anote encomendas recebidas para os apartamentos.",
+  },
+  {
+    href: "/entregas",
+    titulo: "Consultar entregas",
+    descricao: "Acompanhe o historico de encomendas registradas.",
+  },
+];
 
-// ================= TIPOS =================
-type Visitante = {
-  id: number;
-  nome: string;
-  rg: string;
-  apartamento: string;
-  data?: string;
-};
-
-type Entrega = {
-  id: number;
-  descricao: string;
-  quantidade: string;
-  bloco: string;
-  apartamento: string;
-  foto?: string;
-  data?: string;
-};
-
-// ================= COMPONENTE =================
-export default function Home() {
-  const [visitantes, setVisitantes] = useState<Visitante[]>([]);
-  const [entregas, setEntregas] = useState<Entrega[]>([]);
-
-  // ================= DATA =================
-  function formatarData(data?: string) {
-    if (!data) return "";
-    return new Date(data).toLocaleString("pt-BR", {
-      timeZone: "America/Sao_Paulo",
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  }
-
-  // ================= VISITANTES =================
-  async function carregarVisitantes() {
-    const res = await fetch("/api/visitantes", { cache: "no-store" });
-    const data = await res.json();
-    setVisitantes(Array.isArray(data) ? data : []);
-  }
-
-  async function registrarVisitante(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-
-    const form = e.currentTarget;
-
-    const nome = (form.elements.namedItem("nome") as HTMLInputElement).value;
-    const rg = (form.elements.namedItem("rg") as HTMLInputElement).value;
-    const apartamento = (form.elements.namedItem("apartamento") as HTMLInputElement).value;
-
-    await fetch("/api/visitantes", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ nome, rg, apartamento }),
-    });
-
-    form.reset();
-    carregarVisitantes();
-  }
-
-  async function excluirVisitante(id: number) {
-    await fetch("/api/visitantes", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id }),
-    });
-    carregarVisitantes();
-  }
-
-  async function editarVisitante(v: Visitante) {
-    const nome = prompt("Novo nome:", v.nome);
-    if (!nome) return;
-
-    await fetch("/api/visitantes", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...v, nome }),
-    });
-
-    carregarVisitantes();
-  }
-
-  // ================= ENTREGAS =================
-  async function carregarEntregas() {
-    const res = await fetch("/api/entregas", { cache: "no-store" });
-    const data = await res.json();
-    setEntregas(Array.isArray(data) ? data : []);
-  }
-
-  async function registrarEntrega(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-
-    const form = e.currentTarget;
-    const formData = new FormData(form);
-
-    const foto = formData.get("foto") as File;
-
-    if (foto && foto.size === 0) {
-      formData.delete("foto");
-    }
-
-    const res = await fetch("/api/entregas", {
-      method: "POST",
-      body: formData,
-    });
-
-    const novaEntrega = await res.json();
-
-    if (novaEntrega && novaEntrega.id) {
-      setEntregas((prev) => [novaEntrega, ...prev]);
-    }
-
-    form.reset();
-  }
-
-  async function excluirEntrega(id: number) {
-    await fetch("/api/entregas", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id }),
-    });
-    carregarEntregas();
-  }
-
-  async function editarEntrega(e: Entrega) {
-    const descricao = prompt("Nova descrição:", e.descricao);
-    if (!descricao) return;
-
-    await fetch("/api/entregas", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...e, descricao }),
-    });
-
-    carregarEntregas();
-  }
-
-  // ================= INIT =================
-  useEffect(() => {
-    async function init() {
-      await carregarVisitantes();
-      await carregarEntregas();
-    }
-
-    init();
-  }, []);
-
-  // ================= UI =================
+export default function HomePage() {
   return (
-    <>
-      <header className="header">🏢 Portaria San Marino</header>
-
-      <div className="container grid">
-        {/* VISITANTE */}
-        <div className="card">
-          <h2>👤 Registrar Visitante</h2>
-          <form onSubmit={registrarVisitante}>
-            <input name="nome" placeholder="Nome" required />
-            <input name="rg" placeholder="RG" required />
-            <input name="apartamento" placeholder="Apartamento" required />
-            <button type="submit">Registrar</button>
-          </form>
+    <div className="home-shell">
+      <section className="hero-panel">
+        <div className="hero-copy">
+          <span className="eyebrow">Painel da portaria</span>
+          <h2>Bem-vindo ao sistema da Portaria San Marino</h2>
+          <p className="hero-text">
+            Organize visitantes e entregas em um so lugar, com acessos rapidos
+            para o atendimento do dia a dia.
+          </p>
+          <div className="hero-actions">
+            <Link href="/registrar-visitante" className="quick-link quick-link-primary">
+              Novo visitante
+            </Link>
+            <Link href="/registrar-entrega" className="quick-link">
+              Nova entrega
+            </Link>
+          </div>
         </div>
 
-        {/* ENTREGA */}
-        <div className="card">
-          <h2>📦 Registrar Entrega</h2>
-          <form onSubmit={registrarEntrega}>
-            <input name="descricao" placeholder="Descrição" required />
-            <input name="quantidade" placeholder="Quantidade" required />
-            <input name="bloco" placeholder="Bloco" required />
-            <input name="apartamento" placeholder="Apartamento" required />
-
-            <input
-              name="foto"
-              type="file"
-              accept="image/*"
-              onChange={(e) =>
-                console.log("📸 Arquivo escolhido:", e.target.files?.[0])
-              }
-            />
-
-            <button type="submit">Registrar</button>
-          </form>
+        <div className="status-card">
+          <p className="status-label">Rotina sugerida</p>
+          <ol className="status-list">
+            <li>Cadastre a entrada assim que o visitante chegar.</li>
+            <li>Confirme apartamento e documento antes de liberar.</li>
+            <li>Registre encomendas assim que forem recebidas.</li>
+          </ol>
         </div>
+      </section>
 
-        {/* VISITANTES */}
-        <div className="card">
-          <h2>📋 Visitantes</h2>
-          <ul>
-            {visitantes.map((v) => (
-              <li key={v.id}>
-                👤 {v.nome} - RG: {v.rg}
-                <br />
-                🏠 Ap {v.apartamento}
-                <br />
-                🕒 {formatarData(v.data)}
-                <div className="actions">
-                  <button className="btn-edit" onClick={() => editarVisitante(v)}>✏️</button>
-                  <button className="btn-delete" onClick={() => excluirVisitante(v.id)}>❌</button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
+      <section className="shortcut-grid">
+        {atalhos.map((atalho) => (
+          <Link key={atalho.href} href={atalho.href} className="shortcut-card">
+            <strong>{atalho.titulo}</strong>
+            <p>{atalho.descricao}</p>
+            <span>Acessar</span>
+          </Link>
+        ))}
+      </section>
 
-        {/* ENTREGAS */}
-        <div className="card">
-          <h2>📦 Entregas</h2>
-          <ul>
-            {entregas.map((e) => (
-              <li key={e.id}>
-                📦 {e.descricao} - {e.quantidade}
-                <br />
-                🏢 Bloco {e.bloco} Ap {e.apartamento}
-                <br />
-                🕒 {formatarData(e.data)}
+      <section className="info-grid">
+        <article className="info-card">
+          <h3>Fluxo rapido</h3>
+          <p>
+            Use os atalhos acima para registrar movimentacoes sem precisar
+            navegar pelo menu completo.
+          </p>
+        </article>
 
-                {e.foto ? (
-                  <Image
-                    src={e.foto}
-                    alt="Foto da entrega"
-                    width={120}
-                    height={120}
-                    style={{ marginTop: 8, border: "1px solid #ccc" }}
-                  />
-                ) : (
-                  <p style={{ color: "#999" }}>Sem imagem</p>
-                )}
+        <article className="info-card">
+          <h3>Consulta centralizada</h3>
+          <p>
+            As listas de visitantes e entregas ajudam a conferir o que foi
+            registrado durante o turno.
+          </p>
+        </article>
 
-                <div className="actions">
-                  <button className="btn-edit" onClick={() => editarEntrega(e)}>✏️</button>
-                  <button className="btn-delete" onClick={() => excluirEntrega(e.id)}>❌</button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-    </>
+        <article className="info-card">
+          <h3>Atendimento mais claro</h3>
+          <p>
+            Mantenha os dados organizados para reduzir erros e agilizar a
+            comunicacao com moradores.
+          </p>
+        </article>
+      </section>
+    </div>
   );
 }
