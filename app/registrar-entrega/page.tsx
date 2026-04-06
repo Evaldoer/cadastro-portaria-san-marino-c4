@@ -232,6 +232,7 @@ export default function RegistrarEntregaPage() {
       setFoto(null);
       setCodigoLido("");
       setFormatoLido("");
+      setScannerAtivo(false);
     } catch {
       setMensagem("Nao foi possivel registrar a entrega.");
     } finally {
